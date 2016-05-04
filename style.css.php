@@ -8,6 +8,28 @@
 	}
 ?>
 /*<style>*/
+
+/* basic table styles for divs */
+.table {
+    display: table;
+}
+.table-row {
+    display: table-row;
+}
+.table-cell, .table-header
+{
+    display: table-cell;
+    border: solid;
+    border-width: thin;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.table-header
+{
+    font-weight: bold;
+    text-align: center;
+}
+
 html {
     margin: 50px;
     padding: 0;
@@ -25,11 +47,11 @@ body{
     }
 ?>
 }
-table {
+.table {
     border-spacing: 0;
     border-collapse: collapse;
 }
-td, th {
+.table-cell, .table-header {
     padding: .3em;
 <?php
     if ($background=='dark') {
@@ -82,8 +104,8 @@ textarea {
 }
 
 .shadowing,
-tr.shadowing td,
-tr.shadowing th {
+.table-row.shadowing .table-cell,
+.table-row.shadowing .table-header {
     border: solid 2px #aaa;
 }
 

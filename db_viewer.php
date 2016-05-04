@@ -66,21 +66,21 @@
         }
     }
 
-	# header row html <th>'s, functionalized because it's repeated every so many rows
+	# header row html <.table-header>'s, functionalized because it's repeated every so many rows
 	function headerRow(&$rows, $rowN) {
 		$firstRow = current($rows);
 ?>
-	<tr data-row="<?= $rowN ?>">
+	<div class="table-row" data-row="<?= $rowN ?>">
 <?php
 		foreach ($firstRow as $fieldName => $val) {
 ?>
-		<th class="popr" data-id="1">
+		<div class="table-header" class="popr" data-id="1">
 			<?= $fieldName ?>
-		</th>
+		</div>
 <?php
 		}
 ?>
-	</tr>
+	</div>
 <?php
 	}
 
@@ -120,7 +120,7 @@
 	function nthCol(n) {
         //console.log('nthCol', n);
         var n_plus_1 = (parseInt(n)+1).toString();
-		return $('#query_table tr > *:nth-child('
+		return $('#query_table .table-row > *:nth-child('
             + n_plus_1 +
         ')');
 	}
@@ -141,7 +141,7 @@
 
 	function nthRow(n) {
         var n_plus_1 = (parseInt(n)+1).toString();
-		return $('#query_table tr:nth-child('
+		return $('#query_table .table-row:nth-child('
 			+ n_plus_1 +
 		')');
 	}
@@ -191,13 +191,13 @@
 	}
 
 
-    // if tr's tds doesn't already have a rowspan, give it a rowspan for num_rows rows
+    // if .table-row's .table-cells doesn't already have a rowspan, give it a rowspan for num_rows rows
     // add subrows to fill out the rowspan
     // if row is already split, add additional rows as needed otherwise leave it alone
     function splitRow($row, num_rows) {
         console.log('splitRow, num_rows =', num_rows);
         { // adjust rowspan on tds
-            var existing_rowspan = $row.find('td:first').attr('rowspan');
+            var existing_rowspan = $row.find('.table-cell:first').attr('rowspan');
             var existing_rows = existing_rowspan || 1;
             console.log('existing_rowspan', existing_rowspan);
 
@@ -208,7 +208,7 @@
                                     : 0);
 
             if (add_more_rows || existing_rowspan === undefined) {
-                $row.find('td').attr('rowspan', num_rows);
+                $row.find('.table-cell').attr('rowspan', num_rows);
             }
             console.log('rowspan_increase', rowspan_increase);
         }
@@ -228,7 +228,7 @@
         console.log('adding new extra rows');
         for (var rowN = 0; rowN < rowspan_increase; rowN++) {
             console.log('adding new extra row');
-            var $new_row = $('<tr class="extra-row"></tr>');
+            var $new_row = $('<div class="table-row extra-row"></div>');
             $rows.push($new_row); // array to return
             $last_row.after($new_row); // add to DOM
             $last_row = $new_row;
@@ -243,11 +243,11 @@
 
     // undo the split created by splitRow
     function unsplitRow($row) {
-        // remove tr.extra-row's underneath
+        // remove .table-row.extra-row's underneath
         var extra_rows = extraRowsUnder($row);
         extra_rows.remove();
         // remove rowspan
-        $row.children('td').removeAttr('rowspan');
+        $row.children('.table-cell').removeAttr('rowspan');
     }
 
     // given a row, add multiple rows that go alongside it
@@ -257,15 +257,15 @@
         var num_rows = new_rows.length;
         var $rows = splitRow($row, num_rows);
 
-        // add to top row - some td's already present
-        // must insert after the correct <td>
-        var $top_elem = $row.find('td').eq(col_num);
+        // add to top row - some .table-cell's already present
+        // must insert after the correct <div.table-cell>
+        var $top_elem = $row.find('.table-cell').eq(col_num);
         var new_content = new_rows[0];
         //console.log('new_content', new_content);
         $top_elem.after(new_content);
         //console.log('appended');
 
-        // add to subsequent rows - no existing td's to compete with
+        // add to subsequent rows - no existing .table-cell's to compete with
         for (var rowN = 1; rowN < num_rows; rowN++) {
             //console.log('rowN',rowN);
             var $this_row = $rows[rowN];
@@ -304,7 +304,7 @@
             # check if there's some rows
 ?>
 
-<table id="query_table">
+<div class="table" id="query_table">
 <?php
             $headerEvery = isset($_GET['header_every'])
                               ? $_GET['header_every']
@@ -317,17 +317,17 @@
                     $rowN++;
                 }
 ?>
-	<tr data-row="<?= $rowN ?>">
+	<div class="table-row" data-row="<?= $rowN ?>">
 <?php
                 foreach ($row as $val) {
 ?>
-		<td>
+		<div class="table-cell">
 			<?= $val ?>
-		</td>
+		</div>
 <?php
                 }
 ?>
-	</tr>
+	</div>
 <?php
                 $rowN++;
             }
@@ -429,6 +429,7 @@
 
             var val = getDataKeyedByCellContents(elem, data, field_name);
 
+            // #todo figure out .table-cell vs .table-header
             var TD_or_TH = elem.tagName;
             var display_val = (TD_or_TH == 'TH'
                                     ? field_name
@@ -452,7 +453,7 @@
     }
 
     function isHeaderRow(row) {
-        return row.children('th').length > 0;
+        return row.children('.table-header').length > 0;
     }
 
     function addBacklinkedDataToTable(cells, data, exclude_fields) {
@@ -475,18 +476,18 @@
             field_name = field_names[i];
             //console.log('looping headers, field_name', field_name);
             header_cells_str += '\
-                <th class="level' + innerLevel + '"\
+                <div class="table-header level' + innerLevel + '"\
                     level="' + innerLevel + '"\
                 >\
                     ' + field_name + '\
-                </th>\
+                </div>\
             ';
         }
         var header_cells = $(header_cells_str);
         console.log('header_cells',header_cells);
 
         cells.each(function(idx,elem){
-            var row = $(elem).closest('tr');
+            var row = $(elem).closest('.table-row');
             if (isHeaderRow(row)) {
                 console.log('header_row', header_cells);
                 //console.log('elem', elem);
@@ -506,11 +507,11 @@
                                 function(field_name,idx2) {
                                     var val = data_subrow[field_name];
                                     return $('\
-                                        <td class="level' + innerLevel + '"\
+                                        <div class="table-cell level' + innerLevel + '"\
                                             level="' + innerLevel + '"\
                                         >\
                                             ' + val + '\
-                                        </td>\
+                                        </div>\
                                     ');
                                 }
                             );
@@ -528,12 +529,12 @@
                     //var num_new_cols = field_names.length;
 
                     for (var i=0; i<num_new_cols; i++) {
-                        // #todo factor td html into a function
+                        // #todo factor .table-cell html into a function
                         $(elem).after('\
-                            <td class="level' + innerLevel + '"\
+                            <div class="table-cell level' + innerLevel + '"\
                                 level="' + innerLevel + '"\
                             >\
-                            </td>\
+                            </div>\
                         ');
                     }
                 }
@@ -557,7 +558,7 @@
         }
     }
 
-    // elem is the pivot <th> element you click on to
+    // elem is the pivot <.table-header> element you click on to
     // close all the rows that have been opened from the join
     function closeJoin(elem) {
 
@@ -624,7 +625,7 @@
 
                     var col_no = colNo(elem);
                     var all_cells = nthCol(col_no); // #todo factor to allColCells() or one of those?
-                    var val_cells = all_cells.filter('td');
+                    var val_cells = all_cells.filter('.table-cell');
                     var ids = getColVals(val_cells);
                     var non_null_ids = ids.filter(isTruthy)
                         .map(trimIfString)
@@ -674,7 +675,7 @@
 
             var col_no = colNo(elem);
             var all_cells = nthCol(col_no); // #todo factor to allColCells() or one of those?
-            var val_cells = all_cells.filter('td');
+            var val_cells = all_cells.filter('.table-cell');
             var vals = getColVals(val_cells);
             var table = backlinkJoinTable;
             var data_type = null; // #todo generalize if necessary
@@ -759,7 +760,7 @@
     }
 
     function colValCells(elem) {
-        return allColCells(elem).filter('td');
+        return allColCells(elem).filter('.table-cell');
     }
 
     function colVals(elem) {
@@ -827,7 +828,7 @@
         if (show_hide_mode) {
             // alt to fold/unfold row
             if (e.altKey) {
-                rowN = $(e.target).closest('tr').attr('data-row');
+                rowN = $(e.target).closest('.table-row').attr('data-row');
 
                 if (e.shiftKey) {
                     unfoldRowsFrom(rowN);
@@ -851,8 +852,8 @@
     };
 
 
-    $('table').on('click', 'td', tdClickHandler);
-    $('table').on('click', 'th', thClickHandler);
+    $('.table').on('click', '.table-cell', tdClickHandler);
+    $('.table').on('click', '.table-header', thClickHandler);
 
 </script>
 
