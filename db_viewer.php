@@ -441,6 +441,11 @@
             { # form
 ?>
 <body>
+
+    <a style="color:white" href="/hackerspace.php">
+        &lt; Back to Hackerspace
+    </a>
+
 	<form method="post">
         <h2 id="query_header">
             Enter SQL Query
