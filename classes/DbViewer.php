@@ -146,6 +146,9 @@
 
         # get all tables with that fieldname, optionally filtering by vals
         public static function tables_with_field($fieldname, $data_type=null, $vals=null) {
+			$args = print_r(get_defined_vars(),1);
+			do_log("top of tables_with_field, get_defined_vars()=$args");
+			do_log("  fieldname=$fieldname, data_type=$data_type, vals=".print_r($vals,1));
 
             $has_vals = (is_array($vals) && count($vals));
 
@@ -239,16 +242,14 @@
         #---------------
 
         public static function log($msg) {
-            error_log($msg, 3, 'error_log');
+            error_log($msg, 3, __DIR__.'/error_log');
         }
 
         public static function val_list_str($vals) {
             $val_reps = array_map(
                 function($val) {
+					return Util::quote($val);
 					#return "'$val'";
-                    global $db; #todo will this global work in all cases?
-                    #todo #fixme might not work for nulls?
-                    return $db->quote($val); #todo maybe make a fn for quote?
                 },
                 $vals
             );
@@ -294,7 +295,8 @@
         # convert postgres array str into php array
         public static function pgArray2array($pgArrayStr, $itemType='text') {
             $arrayType = $itemType.'[]';
-            $query = "select array_to_json('$pgArrayStr'::$arrayType)";
+            $pgArrayStrQuoted = Util::quote($pgArrayStr);
+            $query = "select array_to_json($pgArrayStrQuoted::$arrayType)";
             $rows = Util::sql($query);
             $row = $rows[0];
             $val = $row['array_to_json'];
@@ -312,9 +314,77 @@
                 elseif ($fieldname == 'iid') {
                     return $base_table.'_iid';
                 }
+				else {
+					return $fieldname;
+				}
             }
             else {
                 return $fieldname;
+            }
+        }
+
+        #todo improve pg_array guess, maybe user column type
+        public static function seems_like_pg_array($val) {
+            if (is_string($val)) {
+                $len = strlen($val);
+                if ($len >= 2
+                    && $val[0] == "{"
+                    && $val[$len-1] == "}"
+                ) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+
+        public static function is_url($val) {
+            if (is_string($val)) {
+                $url_parts = parse_url($val);
+                $is_url = (isset($url_parts['scheme']));
+                return $is_url;
+            }
+            else {
+                return false;
+            }
+        }
+
+        # formal $val as HTML to put in <td>
+        public static function val_html($val) {
+            $val = htmlentities($val);
+            if (self::seems_like_pg_array($val)) {
+                $vals = self::pgArray2array($val);
+                { ob_start();
+?>
+        <ul>
+<?php
+                    foreach ($vals as $val) {
+?>
+            <li><?= $val ?></li>
+<?php
+                    }
+?>
+        </ul>
+<?php
+                    return ob_get_clean();
+                }
+            }
+            elseif (self::is_url($val)) {
+                { ob_start();
+?>
+        <a href="<?= $val ?>" target="_blank">
+            <?= $val ?>
+        </a>
+<?php
+                    return ob_get_clean();
+                }
+            }
+            else {
+                return $val;
             }
         }
 

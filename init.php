@@ -1,6 +1,21 @@
 <?php
 
+	function do_log($msg) {
+		$logPath = __DIR__.'/error_log';
+		#$msg .= " (to $logPath)";
+		error_log("$msg", 3, $logPath);
+	}
+	function log_and_say($msg) {
+		echo $msg;
+		do_log($msg);
+	}
+
     { # basic init
+        #todo generalize timezone
+        # btw - why are we not allowed to use the system's timezone setting??
+        date_default_timezone_set("America/Chicago");
+
+		do_log(date('c') . " - db_viewer received a request\n");
         ini_set('memory_limit', '4000M');
         $requestVars = array_merge($_GET, $_POST);
     }

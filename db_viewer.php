@@ -345,6 +345,9 @@
         background: rgba(100,100,100,.5);
         border: solid 1px white;
     }
+    a {
+        color: #88f;
+    }
     </style>
 <?php
                     }
@@ -504,7 +507,7 @@
                             foreach ($row as $val) {
 ?>
 		<td>
-			<?= $val ?>
+			<?= DbViewer::val_html($val) ?>
 		</td>
 <?php
                             }
