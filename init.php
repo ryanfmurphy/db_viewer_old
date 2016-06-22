@@ -39,8 +39,6 @@
         }
     }
 
-    require_once('classes/DbViewer.php');
-
 	{ # vars adjustments
         { # search_path
             if (!isset($search_path)) {
@@ -53,14 +51,15 @@
             }
 
             { # get as array
-                #$search_path_no_spaces = str_replace($search_path, ' ', '');
-                #$schemas_in_path = explode(',', $search_path_no_spaces);
-                $schemas_in_path = DbViewer::schemas_in_path($search_path);
-            }
-
-            { # more settings / tweaks
-                DbViewer::setDbSearchPath($search_path);
+                $search_path_no_spaces = str_replace($search_path, ' ', '');
+                $schemas_in_path = explode(',', $search_path_no_spaces);
             }
         }
 	}
+
+    require_once('classes/DbViewer.php');
+
+    { # more settings / tweaks
+        DbViewer::setDbSearchPath($search_path);
+    }
 
