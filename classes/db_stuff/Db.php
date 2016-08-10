@@ -164,13 +164,21 @@ if (!class_exists('Db')) {
             if (isset($rowVars['where_clauses'])) {
                 $whereClauses = $rowVars['where_clauses'];
                 unset($rowVars['where_clauses']);
-                $sql = self::buildDeleteSql($table_name, $whereClauses);
+                $sql = self::buildDeleteSql($table_name, $rowVars, $whereClauses);
+                die($sql);
                 return self::sql($sql);
                 #return self::queryFetch($sql);
             }
             else {
                 die("can't do updateRow without where_clauses");
             }
+        }
+
+        public static function buildSelectSql($table_name, $wheres) {
+            $sql = "select * from $table_name";
+            $sql .= self::buildWhereClause($wheres);
+            $sql .= ";";
+            return $sql;
         }
 
         # save changes of existing obj/row to db
@@ -197,6 +205,7 @@ if (!class_exists('Db')) {
         }
 
         public static function buildDeleteSql($table_name, $whereClauses) {
+
             { # build sql
                 $sql = "delete from $table_name ";
 
@@ -243,13 +252,6 @@ if (!class_exists('Db')) {
                 $where_or_and = '    and';
             }
 
-            return $sql;
-        }
-
-        public static function buildSelectSql($table_name, $wheres) {
-            $sql = "select * from $table_name";
-            $sql .= self::buildWhereClause($wheres);
-            $sql .= ";";
             return $sql;
         }
 
