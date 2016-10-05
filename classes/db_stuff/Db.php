@@ -94,6 +94,16 @@ if (!class_exists('Db')) {
                 return $result;
             }
         }
+
+        public static function sql_get1($query) {
+            $rows = self::sql($query);
+            if (count($rows) >= 1) {
+                return $rows[0];
+            }
+            else {
+                return null;
+            }
+        }
         
         public static function quote($val) {
             $db = Db::conn();
@@ -174,13 +184,6 @@ if (!class_exists('Db')) {
             }
         }
 
-        public static function buildSelectSql($table_name, $wheres) {
-            $sql = "select * from $table_name";
-            $sql .= self::buildWhereClause($wheres);
-            $sql .= ";";
-            return $sql;
-        }
-
         # save changes of existing obj/row to db
         public static function buildUpdateSql($table_name, $setKeyVals, $whereClauses) {
 
@@ -236,8 +239,13 @@ if (!class_exists('Db')) {
             header("Location: $db_viewer_url");
         }
 
-        public static function viewTable($table_name, $whereVars=array()) {
-            $sql = self::buildSelectSql($table_name, $whereVars);
+        public static function viewTable(
+            $table_name, $whereVars=array(), $selectFields=null
+        ) {
+
+            $sql = self::buildSelectSql(
+                $table_name, $whereVars, $selectFields);
+
             return Db::viewQuery($sql);
         }
 
@@ -252,6 +260,22 @@ if (!class_exists('Db')) {
                 $where_or_and = '    and';
             }
 
+            return $sql;
+        }
+
+        public static function buildSelectSql($table_name, $wheres, $select_fields=null) {
+
+            if ($select_fields === null) {
+                $select_fields = '*';
+            }
+            elseif (is_array($select_fields)) {
+                #todo maybe use val_list fn
+                $select_fields = implode(',', $select_fields);
+            }
+
+            $sql = "select $select_fields from $table_name";
+            $sql .= self::buildWhereClause($wheres);
+            $sql .= ";";
             return $sql;
         }
 
