@@ -42,6 +42,17 @@ if (!class_exists('Db')) {
             , E_USER_ERROR);
         }
 
+        public static function errorResult($sql=null) {
+            $db = Db::conn();
+            $result = array(
+                'success' => 0,
+                'error_code' => $db->errorCode(),
+                'error_info' => $db->errorInfo(),
+            );
+            if ($sql) { $result['sql'] = $sql; }
+            return $result;
+        }
+
         public static function sqlLiteral($val) {
             if (is_string($val)) {
                 $db = Db::conn();
@@ -55,6 +66,8 @@ if (!class_exists('Db')) {
         }
 
         public static function sqlFieldsAndValsFromArray($vars) {
+            global $hash_password_fields; # from config
+
             { # key list
                 $keys = array_keys($vars);
                 $varNameList = implode(', ', $keys);
@@ -71,7 +84,18 @@ if (!class_exists('Db')) {
         val = ".print_r($val,1)
                         );
                     }
-                    $varValLiterals[] = Db::sqlLiteral($val);
+
+                    if (isset($hash_password_fields)
+                        && $hash_password_fields
+                        && strpos($key, 'password') !== false
+                    ) {
+                        $safeVal = password_hash($val, PASSWORD_BCRYPT);
+                    }
+                    else {
+                        $safeVal = $val;
+                    }
+                    $safeVal = Db::sqlLiteral($safeVal);
+                    $varValLiterals[] = $safeVal;
                 }
                 $varValList = implode(', ', $varValLiterals);
             }
@@ -85,10 +109,22 @@ if (!class_exists('Db')) {
         }
 
         public static function sql($query) {
+            global $show_internal_result_details;
+
             $db = Db::conn();
             $result = $db->query($query);
             if (is_a($result, 'PDOStatement')) {
-                return $result->fetchAll(PDO::FETCH_ASSOC);
+                $response = array(
+                    'success' => true,
+                    'rows' => $result->fetchAll(PDO::FETCH_ASSOC),
+                );
+                if (isset($show_internal_result_details)
+                    && $show_internal_result_details
+                ) {
+                    $response['result'] = $result;
+                    $response['sql'] = $query;
+                }
+                return $response;
             }
             else {
                 return $result;
@@ -143,8 +179,9 @@ if (!class_exists('Db')) {
             list($varNameList, $varValList)
                 = Db::sqlFieldsAndValsFromArray($rowVars);
 
+            $tableNameQuoted = DbUtil::quote_tablename($tableName);
             $sql = "
-                insert into $tableName ($varNameList)
+                insert into $tableNameQuoted ($varNameList)
                 values ($varValList);
             ";
 
@@ -153,8 +190,10 @@ if (!class_exists('Db')) {
             }
             else {
                 $db = Db::conn();
-                $result = $db->query($sql);
-                return $result;
+                $result = self::sql($sql);
+                return ($result
+                            ? $result
+                            : self::errorResult($sql));
             }
         }
 
@@ -163,7 +202,10 @@ if (!class_exists('Db')) {
                 $whereClauses = $rowVars['where_clauses'];
                 unset($rowVars['where_clauses']);
                 $sql = self::buildUpdateSql($table_name, $rowVars, $whereClauses);
-                return self::queryFetch($sql);
+                $result = self::sql($sql);
+                return ($result
+                            ? $result
+                            : self::errorResult($sql));
             }
             else {
                 die("can't do updateRow without where_clauses");
@@ -188,7 +230,8 @@ if (!class_exists('Db')) {
         public static function buildUpdateSql($table_name, $setKeyVals, $whereClauses) {
 
             { # build sql
-                $sql = "update $table_name set ";
+                $table_name_quoted = DbUtil::quote_tablename($table_name);
+                $sql = "update $table_name_quoted set ";
 
                 $comma = false;
                 foreach ($setKeyVals as $key => $val) {
