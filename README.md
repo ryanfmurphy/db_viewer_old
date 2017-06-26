@@ -1,3 +1,5 @@
+This repo is Deprecated, see the new repo: https://github.com/ryanfmurphy/db_viewer
+
 DB Viewer - database table view with inline dynamic joins
 =========================================================
 
